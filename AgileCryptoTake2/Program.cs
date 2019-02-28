@@ -91,7 +91,10 @@ namespace PracticalAgileCrypto
             byte[] plain = Encoding.UTF8.GetBytes(plaintext);
             var sb = new StringBuilder();
 
+            // Encrypt the plaintext
             _symCrypto.GenerateIV();
+            _symCrypto.Key = _keyDerivation.GetBytes(_symCrypto.KeySize >> 3);
+
             using (var enc = _symCrypto.CreateEncryptor())
             {
                 using (var memStream = new MemoryStream())
@@ -110,6 +113,7 @@ namespace PracticalAgileCrypto
                         sb.Append(_iterationCount);
                         sb.Append(DELIM);
                         sb.Append(Convert.ToBase64String(memStream.ToArray()));
+                        sb.Append(DELIM);
 
                         memStream.Close();
                         cryptoStream.Close();
@@ -117,7 +121,13 @@ namespace PracticalAgileCrypto
                 }
             }
 
-            // TODO - HMAC
+            // Now create an HMAC over all the previous data incl the ciphertext
+            using (var hmac = _hMac)
+            {
+                _hMac.Key = _keyDerivation.GetBytes(_hMac.HashSize);
+                _hMac.ComputeHash(Encoding.UTF8.GetBytes(sb.ToString()));
+                sb.Append(Convert.ToBase64String(_hMac.Hash));
+            }
 
             return sb.ToString();
         }
@@ -138,8 +148,10 @@ namespace PracticalAgileCrypto
             byte[] pwd = { 0, 45, 33, 123, 45, 77, 66, 53, 32, 155, 43 };
             byte[] salt = { };
 
-            AgileCrypto ac = new AgileCrypto(pwd, salt, AgileCrypto.Version.VERSION_1);
-            string result = ac.Protect("Hello!");
+            string s1 = new AgileCrypto(pwd, salt, AgileCrypto.Version.VERSION_3).Protect("Hello!");
+            string s2 = new AgileCrypto(pwd, salt, AgileCrypto.Version.VERSION_3).Protect("Hello!");
+            string s3 = new AgileCrypto(pwd, salt, AgileCrypto.Version.VERSION_3).Protect("Hello!");
+            string s4 = new AgileCrypto(pwd, salt, AgileCrypto.Version.VERSION_3).Protect("Hello!");
         }
     }
 }
