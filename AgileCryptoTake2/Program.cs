@@ -81,6 +81,11 @@ namespace PracticalAgileCrypto
             }
         }
 
+        /// <summary>
+        /// Method to encrypt and MAC incoming plaintext
+        /// </summary>
+        /// <param name="plaintext"></param>
+        /// <returns>Base64-encoded string that includes: version info, IV, salt, PBKDF# etc</returns>
         public string Protect(string plaintext)
         {
             byte[] plain = Encoding.UTF8.GetBytes(plaintext);
@@ -112,12 +117,16 @@ namespace PracticalAgileCrypto
                 }
             }
 
+            // TODO - HMAC
+
             return sb.ToString();
         }
 
         public string Unprotect()
         {
             var sb = new StringBuilder();
+
+            // TODO: Everything
 
             return sb.ToString();
         }
@@ -131,7 +140,6 @@ namespace PracticalAgileCrypto
 
             AgileCrypto ac = new AgileCrypto(pwd, salt, AgileCrypto.Version.VERSION_1);
             string result = ac.Protect("Hello!");
-            Console.WriteLine("Hello World!");
         }
     }
 }
