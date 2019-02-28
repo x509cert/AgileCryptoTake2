@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.28307.421
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AgileCryptoTake2", "AgileCryptoTake2\AgileCryptoTake2.csproj", "{CDD4FD1C-4C46-4B19-AC84-41E07B27AAAF}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{CDD4FD1C-4C46-4B19-AC84-41E07B27AAAF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CDD4FD1C-4C46-4B19-AC84-41E07B27AAAF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CDD4FD1C-4C46-4B19-AC84-41E07B27AAAF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CDD4FD1C-4C46-4B19-AC84-41E07B27AAAF}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {6BF9B52D-2F3B-4929-97B1-055FFAD2F024}
+	EndGlobalSection
+EndGlobal
