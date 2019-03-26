@@ -8,6 +8,7 @@ namespace PracticalAgileCrypto
 {
     class AgileCrypto
     {
+        // salte size is byte count, not bit count
         private const int SALTSIZE = 128 / 8;
         public enum Version
         {
@@ -18,15 +19,16 @@ namespace PracticalAgileCrypto
             VERSION_LATEST = VERSION_4
         };
 
+        // DELIM is used to delimit the items in the resulting string
         private char DELIM = '|';
 
-        private SymmetricAlgorithm _symCrypto;
-        private HMAC _hMac;
-        private DeriveBytes _keyDerivation;
-        private int _iterationCount;
-        private CipherMode _blockMode;
-        private Version _ver;
-        private byte[] _salt;
+        private SymmetricAlgorithm  _symCrypto;
+        private HMAC                _hMac;
+        private DeriveBytes         _keyDerivation;
+        private int                 _iterationCount;
+        private CipherMode          _blockMode;
+        private Version             _ver;
+        private byte[]              _salt;
 
         public AgileCrypto(byte[] keyMaterial,
                            byte[] salt,
