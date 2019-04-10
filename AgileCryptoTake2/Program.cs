@@ -8,8 +8,10 @@ namespace PracticalAgileCrypto
 {
     class AgileCrypto
     {
-        // salte size is byte count, not bit count
+        // salt size is byte count, not bit count
         private const int SALTSIZE = 128 / 8;
+
+        //This is for testing purposes - 4 versions
         public enum Version
         {
             VERSION_1 = 1,
