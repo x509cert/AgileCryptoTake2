@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Text;
 using System.IO;
-using System.Linq;
 using System.Security.Cryptography;
 
 namespace PracticalAgileCrypto
@@ -232,8 +231,8 @@ namespace PracticalAgileCrypto
     {
         static void Main(string[] args)
         {
-            string pwd = "SSsshh!!";
-            string plaintext = "Hello, World!";
+            const string pwd = "SSsshh!!";
+            const string plaintext = "Hello, World!";
 
             string c1 = new AgileCrypto(AgileCrypto.Version.VERSION_1).Protect(pwd, plaintext);
             string p1 = new AgileCrypto().Unprotect(pwd, c1);
