@@ -143,13 +143,11 @@ namespace PracticalAgileCrypto
                 .Append(Delim)
                 .Append(Convert.ToBase64String(_salt))
                 .Append(Delim)
-                .Append(_iterationCount)
-                .Append(Delim)
                 .Append(Convert.ToBase64String(encrypted))
                 .Append(Delim);
 
             // Now create an HMAC over all the previous data
-            // incl the version#, IV, salt, iteration count and ciphertext
+            // incl the version#, IV, salt, and ciphertext
             // all but the ciphertext are plaintext, we're just protecting
             // them all from tampering
 
@@ -177,10 +175,9 @@ namespace PracticalAgileCrypto
             // 0: version
             // 1: IV
             // 2: salt
-            // 3: iteration count
-            // 4: ciphertext
-            // 5: MAC
-            const int version = 0, initvect = 1, salt = 2, iteration = 3, ciphertext = 4, mac = 5;
+            // 3: ciphertext
+            // 4: MAC
+            const int version = 0, initvect = 1, salt = 2, ciphertext = 3, mac = 4;
             string[] elements = protectedBlob.Split(new char[] { Delim });
 
             // Get version
@@ -192,10 +189,6 @@ namespace PracticalAgileCrypto
 
             // Get salt
             _salt = Convert.FromBase64String(elements[salt]);
-
-            // Get iteration count
-            int.TryParse(elements[iteration], out int iter);
-            _iterationCount = iter;
 
             // Get ciphertext
             byte[] ctext = Convert.FromBase64String(elements[ciphertext]);
