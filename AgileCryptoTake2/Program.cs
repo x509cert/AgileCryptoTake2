@@ -257,6 +257,14 @@ namespace PracticalAgileCrypto
             // algorithm and key should yield two different ciphertexts
             // because the IV and salt are always different
             Console.WriteLine($"C4 != C5 {c4 != c5}");
+
+            // Test a single object used to encrypt and decrypt 
+            var ac = new AgileCrypto();
+            string c6 = ac.Protect(pwd, plaintext);
+            string c7 = ac.Protect(pwd, plaintext);
+            string p6 = ac.Unprotect(pwd, c6);
+            string p7 = ac.Unprotect(pwd, c7);
+            Console.WriteLine($"P6 && P7 {p6 == plaintext && p7 == plaintext}");
         }
     }
 }
