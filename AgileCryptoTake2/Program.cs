@@ -2,6 +2,7 @@
 using System.Text;
 using System.IO;
 using System.Security.Cryptography;
+using System.Net.Http.Headers;
 
 namespace PracticalAgileCrypto
 {
@@ -68,7 +69,7 @@ namespace PracticalAgileCrypto
                     _symCrypto = SymmetricAlgorithm.Create("DES");
                     _symCrypto.Mode = CipherMode.ECB;
                     _symCrypto.Padding = PaddingMode.PKCS7;
-                    _hMac = null;
+                    _hMac = HMAC.Create("HMACRIPEMD160");
                     _iterationCount = 100;
                     _keyDerivation = new Rfc2898DeriveBytes(_keyMaterial, _salt, _iterationCount);
                     break;
@@ -157,17 +158,10 @@ namespace PracticalAgileCrypto
             // all but the ciphertext are plaintext, we're just protecting
             // them all from tampering
 
-            if (_hMac != null)
-            {
-                // Derive a new key for this work
-                _hMac.Key = _keyDerivation.GetBytes(_hMac.HashSize);
-                _hMac.ComputeHash(Encoding.UTF8.GetBytes(sb.ToString()));
-                sb.Append(Convert.ToBase64String(_hMac.Hash));
-            } 
-            else
-            {
-                sb.Append("");
-            }
+            // Derive a new key for this work
+            _hMac.Key = _keyDerivation.GetBytes(_hMac.HashSize);
+            _hMac.ComputeHash(Encoding.UTF8.GetBytes(sb.ToString()));
+            sb.Append(Convert.ToBase64String(_hMac.Hash));
 
             return sb.ToString();
         }
@@ -190,29 +184,45 @@ namespace PracticalAgileCrypto
             // 2: salt
             // 3: iteration count
             // 4: ciphertext
+            // 5: MAC
+            const int _VER = 0, _IV = 1, _SALT = 2, _ITERATION = 3, _CT = 4, _MAC = 5;
             string[] elements = protectedBlob.Split(new char[] { DELIM });
 
             // get version
-            int.TryParse(elements[0], out int ver);
+            int.TryParse(elements[_VER], out int ver);
             _ver = (Version)ver;
 
             // get IV
-            byte[] iv = System.Convert.FromBase64String(elements[1]);
+            byte[] iv = System.Convert.FromBase64String(elements[_IV]);
 
             // get salt
-            _salt = System.Convert.FromBase64String(elements[2]);
+            _salt = System.Convert.FromBase64String(elements[_SALT]);
 
             // get iteration count
-            int.TryParse(elements[3], out int iter);
+            int.TryParse(elements[_ITERATION], out int iter);
             _iterationCount = iter;
 
             // get ciphertext
-            byte[] ciphertext = System.Convert.FromBase64String(elements[4]);
+            byte[] ciphertext = System.Convert.FromBase64String(elements[_CT]);
 
             BuildCryptoObjects(pwd);
 
             _symCrypto.Key = _keyDerivation.GetBytes(_symCrypto.KeySize >> 3);
             _symCrypto.IV = iv;
+
+            // Before we decrypt the ciphertext we need to check the MAC
+            if (string.IsNullOrWhiteSpace(elements[_MAC]))
+                throw new ArgumentException($"'{nameof(protectedBlob)}' Missing MAC.", nameof(protectedBlob));
+
+            // this works by:
+            // 1) stripping the HMAC off the protected blob,
+            // 2) creating an HMAC of the result above
+            // 3) comparing the HMAC in the protected blob and the generated HMAC
+            string blobLessMac  = protectedBlob.Substring(0, protectedBlob.LastIndexOf(elements[_MAC]));
+            _hMac.Key = _keyDerivation.GetBytes(_hMac.HashSize);
+            byte[] result = _hMac.ComputeHash(Encoding.UTF8.GetBytes(blobLessMac));
+            if (string.Compare(elements[_MAC], Convert.ToBase64String(result), true) != 0)
+                throw new ArgumentException($"'{nameof(protectedBlob)}' Incorrect MAC.", nameof(protectedBlob));
 
             string plaintext;
             ICryptoTransform decryptor = _symCrypto.CreateDecryptor();
@@ -256,7 +266,7 @@ namespace PracticalAgileCrypto
 
             // two plaintexts with the same key should yield two different ciphertexts
             // because the IV and salt are always different
-            Console.WriteLine($"C4 != c5 {c4 != c5}");
+            Console.WriteLine($"C4 != C5 {c4 != c5}");
         }
     }
 }
