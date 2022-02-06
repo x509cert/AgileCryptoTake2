@@ -9,20 +9,20 @@ namespace PracticalAgileCrypto
     public class AgileCrypto
     {
         // salt size is byte count, not bit count
-        private const int SALTSIZE = 128 / 8;
+        private const int Saltsize = 128 / 8;
 
         //This is for testing purposes - 4 versions
         public enum Version
         {
-            VERSION_1 = 1,
-            VERSION_2 = 2,
-            VERSION_3 = 3,
-            VERSION_4 = 4,
-            VERSION_LATEST = VERSION_4
+            Version1 = 1,
+            Version2 = 2,
+            Version3 = 3,
+            Version4 = 4,
+            VersionLatest = Version4
         };
 
-        // DELIM is used to delimit the items in the resulting string
-        private const char DELIM = '|';
+        // 'Delim' is used to delimit the items in the resulting string
+        private const char Delim = '|';
 
         private Version             _ver;
         private SymmetricAlgorithm  _symCrypto;
@@ -31,9 +31,6 @@ namespace PracticalAgileCrypto
         private int                 _iterationCount;
         private byte[]              _salt;
         private byte[]              _keyMaterial;
-        private string              _cipherText;
-
-        public string               CipherText { get { return _cipherText; } }
 
         public AgileCrypto(Version ver)
         {
@@ -42,7 +39,7 @@ namespace PracticalAgileCrypto
 
         public AgileCrypto()
         {
-            _ver = Version.VERSION_LATEST;
+            _ver = Version.VersionLatest;
         }
 
         private void GetSalt()
@@ -50,7 +47,7 @@ namespace PracticalAgileCrypto
             // if the salt is non-existant, then create one
             if (_salt is null)
             {
-                _salt = new byte[SALTSIZE];
+                _salt = new byte[Saltsize];
                 new RNGCryptoServiceProvider().GetBytes(_salt);
             }
         }
@@ -65,7 +62,7 @@ namespace PracticalAgileCrypto
 
             switch (_ver)
             {
-                case Version.VERSION_1:
+                case Version.Version1:
                     _symCrypto = SymmetricAlgorithm.Create("DES");
                     _symCrypto.Mode = CipherMode.ECB;
                     _symCrypto.Padding = PaddingMode.PKCS7;
@@ -74,7 +71,7 @@ namespace PracticalAgileCrypto
                     _keyDerivation = new Rfc2898DeriveBytes(_keyMaterial, _salt, _iterationCount);
                     break;
 
-                case Version.VERSION_2:
+                case Version.Version2:
                     _symCrypto = SymmetricAlgorithm.Create("TripleDes");
                     _symCrypto.KeySize = 128;
                     _symCrypto.Mode = CipherMode.CBC;
@@ -84,7 +81,7 @@ namespace PracticalAgileCrypto
                     _keyDerivation = new Rfc2898DeriveBytes(_keyMaterial, _salt, _iterationCount);
                     break;
 
-                case Version.VERSION_3:
+                case Version.Version3:
                     _symCrypto = SymmetricAlgorithm.Create("AesManaged");
                     _symCrypto.KeySize = 128;
                     _symCrypto.Mode = CipherMode.CBC;
@@ -94,7 +91,7 @@ namespace PracticalAgileCrypto
                     _keyDerivation = new Rfc2898DeriveBytes(_keyMaterial, _salt, _iterationCount);
                     break;
 
-                case Version.VERSION_4:
+                case Version.Version4:
                     _symCrypto = SymmetricAlgorithm.Create("AesManaged");
                     _symCrypto.KeySize = 256;
                     _symCrypto.Mode = CipherMode.CBC;
@@ -110,8 +107,9 @@ namespace PracticalAgileCrypto
         }
 
         /// <summary>
-        /// Method to encrypt and MAC incoming plaintext
+        /// Method to encrypt then MAC some plaintext
         /// </summary>
+        /// <param name="pwd"></param>
         /// <param name="plaintext"></param>
         /// <returns>Base64-encoded string that includes: version info, IV, PBKDF# etc</returns>
         public string Protect(string pwd, string plaintext)
@@ -125,33 +123,31 @@ namespace PracticalAgileCrypto
             _symCrypto.GenerateIV();
             _symCrypto.Key = _keyDerivation.GetBytes(_symCrypto.KeySize >> 3);
 
-            // Create an encryptor to perform the stream transform.
-            ICryptoTransform encryptor = _symCrypto.CreateEncryptor();
-
-            // Create the streams used for encryption.
             byte[] encrypted;
-            using (MemoryStream msEncrypt = new MemoryStream())
-            using (CryptoStream csEncrypt = new CryptoStream(msEncrypt, encryptor, CryptoStreamMode.Write))
+
+            var encryptor = _symCrypto.CreateEncryptor();
+            using (var msEncrypt = new MemoryStream())
+            using (var csEncrypt = new CryptoStream(msEncrypt, encryptor, CryptoStreamMode.Write))
             {
-                using (StreamWriter swEncrypt = new StreamWriter(csEncrypt))
+                using (var swEncrypt = new StreamWriter(csEncrypt))
                 {
                     swEncrypt.Write(plaintext);
                 }
                 encrypted = msEncrypt.ToArray();
             }
 
-            _cipherText = Convert.ToBase64String(encrypted);
+            //_cipherText = Convert.ToBase64String(encrypted);
 
             sb.Append((int)_ver)
-                .Append(DELIM)
+                .Append(Delim)
                 .Append(Convert.ToBase64String(_symCrypto.IV))
-                .Append(DELIM)
+                .Append(Delim)
                 .Append(Convert.ToBase64String(_salt))
-                .Append(DELIM)
+                .Append(Delim)
                 .Append(_iterationCount)
-                .Append(DELIM)
+                .Append(Delim)
                 .Append(Convert.ToBase64String(encrypted))
-                .Append(DELIM);
+                .Append(Delim);
 
             // Now create an HMAC over all the previous data
             // incl the version#, IV, salt, iteration count and ciphertext
@@ -167,11 +163,11 @@ namespace PracticalAgileCrypto
         }
 
         /// <summary>
-        /// Method to verify the MAC and the decrypt a protected blob
+        /// Method to verify the MAC and then decrypt a protected blob if the HMAC is ok.
         /// </summary>
         /// <param name="pwd"></param>
         /// <param name="protectedBlob"></param>
-        /// <returns></returns>
+        /// <returns>The plaintext string</returns>
         /// <exception cref="ArgumentException"></exception>
         public string Unprotect(string pwd, string protectedBlob)
         {
@@ -185,50 +181,51 @@ namespace PracticalAgileCrypto
             // 3: iteration count
             // 4: ciphertext
             // 5: MAC
-            const int _VER = 0, _IV = 1, _SALT = 2, _ITERATION = 3, _CT = 4, _MAC = 5;
-            string[] elements = protectedBlob.Split(new char[] { DELIM });
+            const int version = 0, initvect = 1, salt = 2, iteration = 3, ciphertext = 4, mac = 5;
+            string[] elements = protectedBlob.Split(new char[] { Delim });
 
-            // get version
-            int.TryParse(elements[_VER], out int ver);
+            // Get version
+            int.TryParse(elements[version], out int ver);
             _ver = (Version)ver;
 
-            // get IV
-            byte[] iv = System.Convert.FromBase64String(elements[_IV]);
+            // Get IV
+            byte[] iv = System.Convert.FromBase64String(elements[initvect]);
 
-            // get salt
-            _salt = System.Convert.FromBase64String(elements[_SALT]);
+            // Get salt
+            _salt = System.Convert.FromBase64String(elements[salt]);
 
-            // get iteration count
-            int.TryParse(elements[_ITERATION], out int iter);
+            // Get iteration count
+            int.TryParse(elements[iteration], out int iter);
             _iterationCount = iter;
 
-            // get ciphertext
-            byte[] ciphertext = System.Convert.FromBase64String(elements[_CT]);
+            // Get ciphertext
+            byte[] ctext = System.Convert.FromBase64String(elements[ciphertext]);
 
+            // We have all the data we need to build the crypto algs
             BuildCryptoObjects(pwd);
 
             _symCrypto.Key = _keyDerivation.GetBytes(_symCrypto.KeySize >> 3);
             _symCrypto.IV = iv;
 
             // Before we decrypt the ciphertext we need to check the MAC
-            if (string.IsNullOrWhiteSpace(elements[_MAC]))
+            if (string.IsNullOrWhiteSpace(elements[mac]))
                 throw new ArgumentException($"'{nameof(protectedBlob)}' Missing MAC.", nameof(protectedBlob));
 
-            // this works by:
+            // Check the HMAC, this works by:
             // 1) stripping the HMAC off the protected blob,
-            // 2) creating an HMAC of the result above
+            // 2) creating an HMAC of the resulting string above
             // 3) comparing the HMAC in the protected blob and the generated HMAC
-            string blobLessMac  = protectedBlob.Substring(0, protectedBlob.LastIndexOf(elements[_MAC]));
+            string blobLessMac  = protectedBlob.Substring(0, protectedBlob.LastIndexOf(elements[mac]));
             _hMac.Key = _keyDerivation.GetBytes(_hMac.HashSize);
             byte[] result = _hMac.ComputeHash(Encoding.UTF8.GetBytes(blobLessMac));
-            if (string.Compare(elements[_MAC], Convert.ToBase64String(result), true) != 0)
+            if (string.Compare(elements[mac], Convert.ToBase64String(result), true) != 0)
                 throw new ArgumentException($"'{nameof(protectedBlob)}' Incorrect MAC.", nameof(protectedBlob));
 
             string plaintext;
-            ICryptoTransform decryptor = _symCrypto.CreateDecryptor();
-            using (MemoryStream msDecrypt = new MemoryStream(ciphertext))
-            using (CryptoStream csDecrypt = new CryptoStream(msDecrypt, decryptor, CryptoStreamMode.Read))
-            using (StreamReader srDecrypt = new StreamReader(csDecrypt))
+            var decryptor = _symCrypto.CreateDecryptor();
+            using (var msDecrypt = new MemoryStream(ctext))
+            using (var csDecrypt = new CryptoStream(msDecrypt, decryptor, CryptoStreamMode.Read))
+            using (var srDecrypt = new StreamReader(csDecrypt))
             {
                 plaintext = srDecrypt.ReadToEnd();
             }
@@ -244,27 +241,28 @@ namespace PracticalAgileCrypto
             const string pwd = "SSsshh!!";
             const string plaintext = "Hello, World!";
 
-            string c1 = new AgileCrypto(AgileCrypto.Version.VERSION_1).Protect(pwd, plaintext);
+            string c1 = new AgileCrypto(AgileCrypto.Version.Version1).Protect(pwd, plaintext);
             string p1 = new AgileCrypto().Unprotect(pwd, c1);
             Console.WriteLine($"P1 {p1 == plaintext}");
 
-            string c2 = new AgileCrypto(AgileCrypto.Version.VERSION_2).Protect(pwd, plaintext);
+            string c2 = new AgileCrypto(AgileCrypto.Version.Version2).Protect(pwd, plaintext);
             string p2 = new AgileCrypto().Unprotect(pwd, c2);
             Console.WriteLine($"P2 {p2 == plaintext}");
 
-            string c3 = new AgileCrypto(AgileCrypto.Version.VERSION_3).Protect(pwd, plaintext);
+            string c3 = new AgileCrypto(AgileCrypto.Version.Version3).Protect(pwd, plaintext);
             string p3 = new AgileCrypto().Unprotect(pwd, c3);
             Console.WriteLine($"P3 {p3 == plaintext}");
 
-            string c4 = new AgileCrypto(AgileCrypto.Version.VERSION_4).Protect(pwd, plaintext);
+            string c4 = new AgileCrypto(AgileCrypto.Version.Version4).Protect(pwd, plaintext);
             string p4 = new AgileCrypto().Unprotect(pwd, c4);
             Console.WriteLine($"P4 {p4 == plaintext}");
 
-            string c5 = new AgileCrypto(AgileCrypto.Version.VERSION_4).Protect(pwd, plaintext);
+            string c5 = new AgileCrypto(AgileCrypto.Version.Version4).Protect(pwd, plaintext);
             string p5 = new AgileCrypto().Unprotect(pwd, c5);
             Console.WriteLine($"P5 {p5 == plaintext}");
 
-            // two plaintexts with the same key should yield two different ciphertexts
+            // Two plaintexts encrypted with the same
+            // algorithm and key should yield two different ciphertexts
             // because the IV and salt are always different
             Console.WriteLine($"C4 != C5 {c4 != c5}");
         }
