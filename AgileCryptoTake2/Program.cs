@@ -2,7 +2,6 @@
 using System.Text;
 using System.IO;
 using System.Security.Cryptography;
-using System.Net.Http.Headers;
 
 namespace PracticalAgileCrypto
 {
@@ -189,17 +188,17 @@ namespace PracticalAgileCrypto
             _ver = (Version)ver;
 
             // Get IV
-            byte[] iv = System.Convert.FromBase64String(elements[initvect]);
+            byte[] iv = Convert.FromBase64String(elements[initvect]);
 
             // Get salt
-            _salt = System.Convert.FromBase64String(elements[salt]);
+            _salt = Convert.FromBase64String(elements[salt]);
 
             // Get iteration count
             int.TryParse(elements[iteration], out int iter);
             _iterationCount = iter;
 
             // Get ciphertext
-            byte[] ctext = System.Convert.FromBase64String(elements[ciphertext]);
+            byte[] ctext = Convert.FromBase64String(elements[ciphertext]);
 
             // We have all the data we need to build the crypto algs
             BuildCryptoObjects(pwd);
