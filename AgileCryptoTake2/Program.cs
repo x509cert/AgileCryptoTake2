@@ -230,6 +230,7 @@ namespace PracticalAgileCrypto
     {
         static void Main(string[] args)
         {
+            // some tests... yes, pwd and plaintext is in the code!
             const string pwd = "SSsshh!!";
             const string plaintext = "Hello, World!";
 
