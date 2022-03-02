@@ -62,40 +62,40 @@ public class AgileCrypto
         switch (_ver)
         {
             case Version.Version1:
-                _symCrypto = SymmetricAlgorithm.Create("DES");
+                _symCrypto = CreateSymmetricAlgorithm("DES");
                 _symCrypto.Mode = CipherMode.ECB;
                 _symCrypto.Padding = PaddingMode.PKCS7;
-                _hMac = HMAC.Create("HMACRIPEMD160");
+                _hMac = CreateHmac("HMACRIPEMD160");
                 _iterationCount = 100;
                 _keyDerivation = new Rfc2898DeriveBytes(_keyMaterial, _salt, _iterationCount);
                 break;
 
             case Version.Version2:
-                _symCrypto = SymmetricAlgorithm.Create("TripleDes");
+                _symCrypto = CreateSymmetricAlgorithm("TripleDes");
                 _symCrypto.KeySize = 128;
                 _symCrypto.Mode = CipherMode.CBC;
                 _symCrypto.Padding = PaddingMode.PKCS7;
-                _hMac = HMAC.Create("HMACMD5");
+                _hMac = CreateHmac("HMACMD5");
                 _iterationCount = 1000;
                 _keyDerivation = new Rfc2898DeriveBytes(_keyMaterial, _salt, _iterationCount);
                 break;
 
             case Version.Version3:
-                _symCrypto = SymmetricAlgorithm.Create("AesManaged");
+                _symCrypto = CreateSymmetricAlgorithm("AesManaged");
                 _symCrypto.KeySize = 128;
                 _symCrypto.Mode = CipherMode.CBC;
                 _symCrypto.Padding = PaddingMode.PKCS7;
-                _hMac = HMAC.Create("HMACSHA1");
+                _hMac = CreateHmac("HMACSHA1");
                 _iterationCount = 4000;
                 _keyDerivation = new Rfc2898DeriveBytes(_keyMaterial, _salt, _iterationCount);
                 break;
 
             case Version.Version4:
-                _symCrypto = SymmetricAlgorithm.Create("AesManaged");
+                _symCrypto = CreateSymmetricAlgorithm("AesManaged");
                 _symCrypto.KeySize = 256;
                 _symCrypto.Mode = CipherMode.CBC;
                 _symCrypto.Padding = PaddingMode.ANSIX923;
-                _hMac = HMAC.Create("HMACSHA256");
+                _hMac = CreateHmac("HMACSHA256");
                 _iterationCount = 20000;
                 _keyDerivation = new Rfc2898DeriveBytes(_keyMaterial, _salt, _iterationCount);
                 break;
@@ -201,6 +201,28 @@ public class AgileCrypto
         string plaintext = DecryptThePlainText(ctext);
 
         return plaintext;
+    }
+
+    private static SymmetricAlgorithm CreateSymmetricAlgorithm(string name)
+    {
+        SymmetricAlgorithm? result = SymmetricAlgorithm.Create(name);
+        if (result == null)
+        {
+            throw new InvalidOperationException($"The {name} symmetric algorithm cannot be created.");
+        }
+
+        return result;
+    }
+
+    private static HMAC CreateHmac(string name)
+    {
+        HMAC? result = HMAC.Create(name);
+        if (result == null)
+        {
+            throw new InvalidOperationException($"The {name} HMAC cannot be created.");
+        }
+
+        return result;
     }
 
     private byte[] EncryptThePlaintext(string plaintext)
