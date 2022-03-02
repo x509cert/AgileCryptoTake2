@@ -119,22 +119,7 @@ public class AgileCrypto
 
         var sb = new StringBuilder();
 
-        // Encrypt the plaintext
-        _symCrypto.GenerateIV();
-        _symCrypto.Key = _keyDerivation.GetBytes(_symCrypto.KeySize >> 3);
-
-        byte[] encrypted;
-
-        ICryptoTransform encryptor = _symCrypto.CreateEncryptor();
-        using (var msEncrypt = new MemoryStream())
-        using (var csEncrypt = new CryptoStream(msEncrypt, encryptor, CryptoStreamMode.Write))
-        {
-            using (var swEncrypt = new StreamWriter(csEncrypt))
-            {
-                swEncrypt.Write(plaintext);
-            }
-            encrypted = msEncrypt.ToArray();
-        }
+        byte[] encrypted = EncryptThePlaintext(plaintext);
 
         //_cipherText = Convert.ToBase64String(encrypted);
 
@@ -208,20 +193,42 @@ public class AgileCrypto
         // 1) stripping the HMAC off the protected blob,
         // 2) creating an HMAC of the resulting string above
         // 3) comparing the HMAC in the protected blob and the generated HMAC
-        string blobLessMac  = protectedBlob.Substring(0, protectedBlob.LastIndexOf(elements[mac]));
+        string blobLessMac = protectedBlob.Substring(0, protectedBlob.LastIndexOf(elements[mac]));
         _hMac.Key = _keyDerivation.GetBytes(_hMac.HashSize);
         byte[] result = _hMac.ComputeHash(Encoding.UTF8.GetBytes(blobLessMac));
         if (string.Compare(elements[mac], Convert.ToBase64String(result), true) != 0)
             throw new ArgumentException($"'{nameof(protectedBlob)}' Incorrect MAC.", nameof(protectedBlob));
 
+        string plaintext = DecryptThePlainText(ctext);
+
+        return plaintext;
+    }
+
+    private byte[] EncryptThePlaintext(string plaintext)
+    {
+        _symCrypto.GenerateIV();
+        _symCrypto.Key = _keyDerivation.GetBytes(_symCrypto.KeySize >> 3);
+
+        byte[] encrypted;
+
+        ICryptoTransform encryptor = _symCrypto.CreateEncryptor();
+        using var msEncrypt = new MemoryStream();
+        using var csEncrypt = new CryptoStream(msEncrypt, encryptor, CryptoStreamMode.Write);
+        using var swEncrypt = new StreamWriter(csEncrypt);
+        swEncrypt.Write(plaintext);
+        encrypted = msEncrypt.ToArray();
+
+        return encrypted;
+    }
+
+    private string DecryptThePlainText(byte[] ctext)
+    {
         string plaintext;
         ICryptoTransform decryptor = _symCrypto.CreateDecryptor();
-        using (var msDecrypt = new MemoryStream(ctext))
-        using (var csDecrypt = new CryptoStream(msDecrypt, decryptor, CryptoStreamMode.Read))
-        using (var srDecrypt = new StreamReader(csDecrypt))
-        {
-            plaintext = srDecrypt.ReadToEnd();
-        }
+        using var msDecrypt = new MemoryStream(ctext);
+        using var csDecrypt = new CryptoStream(msDecrypt, decryptor, CryptoStreamMode.Read);
+        using var srDecrypt = new StreamReader(csDecrypt);
+        plaintext = srDecrypt.ReadToEnd();
 
         return plaintext;
     }
