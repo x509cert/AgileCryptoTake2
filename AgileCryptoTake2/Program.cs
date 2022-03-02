@@ -125,7 +125,7 @@ public class AgileCrypto
 
         byte[] encrypted;
 
-        var encryptor = _symCrypto.CreateEncryptor();
+        ICryptoTransform encryptor = _symCrypto.CreateEncryptor();
         using (var msEncrypt = new MemoryStream())
         using (var csEncrypt = new CryptoStream(msEncrypt, encryptor, CryptoStreamMode.Write))
         {
@@ -215,7 +215,7 @@ public class AgileCrypto
             throw new ArgumentException($"'{nameof(protectedBlob)}' Incorrect MAC.", nameof(protectedBlob));
 
         string plaintext;
-        var decryptor = _symCrypto.CreateDecryptor();
+        ICryptoTransform decryptor = _symCrypto.CreateDecryptor();
         using (var msDecrypt = new MemoryStream(ctext))
         using (var csDecrypt = new CryptoStream(msDecrypt, decryptor, CryptoStreamMode.Read))
         using (var srDecrypt = new StreamReader(csDecrypt))
