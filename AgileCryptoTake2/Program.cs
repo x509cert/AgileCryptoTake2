@@ -57,7 +57,7 @@ public class AgileCrypto
                 _symCrypto = CreateSymmetricAlgorithm("DES");
                 _symCrypto.Mode = CipherMode.ECB;
                 _symCrypto.Padding = PaddingMode.PKCS7;
-                _hMac = CreateHmac("HMACRIPEMD160");
+                _hMac = new HMACSHA1();
                 _iterationCount = 100;
                 _keyDerivation = new Rfc2898DeriveBytes(_keyMaterial, _salt, _iterationCount);
                 break;
@@ -67,7 +67,7 @@ public class AgileCrypto
                 _symCrypto.KeySize = 128;
                 _symCrypto.Mode = CipherMode.CBC;
                 _symCrypto.Padding = PaddingMode.PKCS7;
-                _hMac = CreateHmac("HMACMD5");
+                _hMac = new HMACMD5();
                 _iterationCount = 1000;
                 _keyDerivation = new Rfc2898DeriveBytes(_keyMaterial, _salt, _iterationCount);
                 break;
@@ -77,7 +77,7 @@ public class AgileCrypto
                 _symCrypto.KeySize = 128;
                 _symCrypto.Mode = CipherMode.CBC;
                 _symCrypto.Padding = PaddingMode.PKCS7;
-                _hMac = CreateHmac("HMACSHA1");
+                _hMac = new HMACSHA1();
                 _iterationCount = 4000;
                 _keyDerivation = new Rfc2898DeriveBytes(_keyMaterial, _salt, _iterationCount);
                 break;
@@ -87,7 +87,7 @@ public class AgileCrypto
                 _symCrypto.KeySize = 256;
                 _symCrypto.Mode = CipherMode.CBC;
                 _symCrypto.Padding = PaddingMode.ANSIX923;
-                _hMac = CreateHmac("HMACSHA256");
+                _hMac = new HMACSHA256();
                 _iterationCount = 20000;
                 _keyDerivation = new Rfc2898DeriveBytes(_keyMaterial, _salt, _iterationCount);
                 break;
@@ -200,17 +200,6 @@ public class AgileCrypto
         if (result == null)
         {
             throw new InvalidOperationException($"The {name} symmetric algorithm cannot be created.");
-        }
-
-        return result;
-    }
-
-    private static HMAC CreateHmac(string name)
-    {
-        HMAC? result = HMAC.Create(name);
-        if (result == null)
-        {
-            throw new InvalidOperationException($"The {name} HMAC cannot be created.");
         }
 
         return result;
