@@ -47,8 +47,7 @@ public class AgileCrypto
         // if the salt is non-existant, then create one
         if (_salt is null)
         {
-            _salt = new byte[Saltsize];
-            new RNGCryptoServiceProvider().GetBytes(_salt);
+            _salt = RandomNumberGenerator.GetBytes(Saltsize);
         }
     }
 
