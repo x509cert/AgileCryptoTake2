@@ -24,31 +24,23 @@ public class AgileCrypto
     // 'Delim' is used to delimit the items in the resulting string
     private const char Delim = '|';
 
-    private Version             _ver;
-    private SymmetricAlgorithm  _symCrypto;
-    private HMAC                _hMac;
-    private DeriveBytes         _keyDerivation;
-    private int                 _iterationCount;
+    private Version              _ver;
+    private SymmetricAlgorithm?  _symCrypto;
+    private HMAC?                _hMac;
+    private DeriveBytes?         _keyDerivation;
+    private int                  _iterationCount;
     private byte[]              _salt;
-    private byte[]              _keyMaterial;
+    private byte[]?              _keyMaterial;
 
     public AgileCrypto(Version ver)
     {
         _ver = ver;
+        _salt = RandomNumberGenerator.GetBytes(Saltsize);
     }
 
     public AgileCrypto()
+        : this(Version.VersionLatest)
     {
-        _ver = Version.VersionLatest;
-    }
-
-    private void GetSalt()
-    {
-        // if the salt is non-existant, then create one
-        if (_salt is null)
-        {
-            _salt = RandomNumberGenerator.GetBytes(Saltsize);
-        }
     }
 
     /// <summary>
@@ -113,7 +105,6 @@ public class AgileCrypto
     /// <returns>Base64-encoded string that includes: version info, IV, PBKDF# etc</returns>
     public string Protect(string pwd, string plaintext)
     {
-        GetSalt();
         BuildCryptoObjects(pwd);
 
         var sb = new StringBuilder();
