@@ -211,16 +211,13 @@ public class AgileCrypto
         byte[] encrypted;
 
         ICryptoTransform encryptor = _symCrypto.CreateEncryptor();
-        using (var msEncrypt = new MemoryStream())
-        using (var csEncrypt = new CryptoStream(msEncrypt, encryptor, CryptoStreamMode.Write))
-        {
-            using (var swEncrypt = new StreamWriter(csEncrypt))
-            {
-                swEncrypt.Write(plaintext);
-            }
-            encrypted = msEncrypt.ToArray();
-        }
-
+        using var msEncrypt = new MemoryStream();
+        using var csEncrypt = new CryptoStream(msEncrypt, encryptor, CryptoStreamMode.Write);
+        using var swEncrypt = new StreamWriter(csEncrypt);
+        swEncrypt.Write(plaintext);
+        swEncrypt.Close();
+        encrypted = msEncrypt.ToArray();
+      
         return encrypted;
     }
 
