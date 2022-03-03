@@ -57,7 +57,7 @@ public class AgileCrypto
                 _symCrypto = CreateSymmetricAlgorithm("DES");
                 _symCrypto.Mode = CipherMode.ECB;
                 _symCrypto.Padding = PaddingMode.PKCS7;
-                _hMac = new HMACSHA1();
+                _hMac = new HMACMD5(); 
                 _iterationCount = 100;
                 _keyDerivation = new Rfc2898DeriveBytes(_keyMaterial, _salt, _iterationCount);
                 break;
@@ -110,8 +110,6 @@ public class AgileCrypto
         var sb = new StringBuilder();
 
         byte[] encrypted = EncryptThePlaintext(plaintext);
-
-        //_cipherText = Convert.ToBase64String(encrypted);
 
         sb.Append((int)_ver)
             .Append(Delim)
@@ -219,7 +217,7 @@ public class AgileCrypto
         swEncrypt.Write(plaintext);
         swEncrypt.Close();
         encrypted = msEncrypt.ToArray();
-
+      
         return encrypted;
     }
 
