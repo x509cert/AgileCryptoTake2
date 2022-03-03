@@ -217,6 +217,7 @@ public class AgileCrypto
         using var csEncrypt = new CryptoStream(msEncrypt, encryptor, CryptoStreamMode.Write);
         using var swEncrypt = new StreamWriter(csEncrypt);
         swEncrypt.Write(plaintext);
+        swEncrypt.Close();
         encrypted = msEncrypt.ToArray();
 
         return encrypted;
