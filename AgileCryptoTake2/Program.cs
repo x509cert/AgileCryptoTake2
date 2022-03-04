@@ -1,10 +1,9 @@
 ﻿namespace PracticalAgileCrypto;
 
 using System;
-using System.Text;
 using System.IO;
 using System.Security.Cryptography;
-
+using System.Text;
 
 public class AgileCrypto
 {
@@ -30,7 +29,6 @@ public class AgileCrypto
     private DeriveBytes?         _keyDerivation;
     private int                  _iterationCount;
     private byte[]              _salt;
-    private byte[]?              _keyMaterial;
 
     public AgileCrypto(Version ver)
     {
@@ -47,9 +45,8 @@ public class AgileCrypto
     /// Builds the internal crypto classes based on the version#
     /// </summary>
     /// <exception cref="ArgumentException"></exception>
-    private void BuildCryptoObjects(string pwd)
+    private void BuildCryptoObjects()
     {
-        _keyMaterial = Encoding.ASCII.GetBytes(pwd);
 
         switch (_ver)
         {
@@ -59,7 +56,6 @@ public class AgileCrypto
                 _symCrypto.Padding = PaddingMode.PKCS7;
                 _hMac = new HMACSHA1();
                 _iterationCount = 100;
-                _keyDerivation = new Rfc2898DeriveBytes(_keyMaterial, _salt, _iterationCount);
                 break;
 
             case Version.Version2:
@@ -69,7 +65,6 @@ public class AgileCrypto
                 _symCrypto.Padding = PaddingMode.PKCS7;
                 _hMac = new HMACMD5();
                 _iterationCount = 1000;
-                _keyDerivation = new Rfc2898DeriveBytes(_keyMaterial, _salt, _iterationCount);
                 break;
 
             case Version.Version3:
@@ -79,7 +74,6 @@ public class AgileCrypto
                 _symCrypto.Padding = PaddingMode.PKCS7;
                 _hMac = new HMACSHA1();
                 _iterationCount = 4000;
-                _keyDerivation = new Rfc2898DeriveBytes(_keyMaterial, _salt, _iterationCount);
                 break;
 
             case Version.Version4:
@@ -89,12 +83,20 @@ public class AgileCrypto
                 _symCrypto.Padding = PaddingMode.ANSIX923;
                 _hMac = new HMACSHA256();
                 _iterationCount = 20000;
-                _keyDerivation = new Rfc2898DeriveBytes(_keyMaterial, _salt, _iterationCount);
                 break;
 
             default:
                 throw new ArgumentException("Invalid crypto version.");
         }
+    }
+
+    /// <summary>
+    /// Build key derivation.
+    /// </summary>
+    private void BuildKeyDerivation(string pwd)
+    {
+        byte[] _keyMaterial = Encoding.ASCII.GetBytes(pwd);
+        _keyDerivation = new Rfc2898DeriveBytes(_keyMaterial, _salt, _iterationCount);
     }
 
     /// <summary>
@@ -105,7 +107,8 @@ public class AgileCrypto
     /// <returns>Base64-encoded string that includes: version info, IV, PBKDF# etc</returns>
     public string Protect(string pwd, string plaintext)
     {
-        BuildCryptoObjects(pwd);
+        BuildCryptoObjects();
+        BuildKeyDerivation(pwd);
 
         var sb = new StringBuilder();
 
@@ -170,7 +173,8 @@ public class AgileCrypto
         byte[] ctext = Convert.FromBase64String(elements[ciphertext]);
 
         // We have all the data we need to build the crypto algs
-        BuildCryptoObjects(pwd);
+        BuildCryptoObjects();
+        BuildKeyDerivation(pwd);
 
         _symCrypto.Key = _keyDerivation.GetBytes(_symCrypto.KeySize >> 3);
         _symCrypto.IV = iv;
