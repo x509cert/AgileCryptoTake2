@@ -105,6 +105,9 @@ public class AgileCrypto
     /// <returns>Base64-encoded string that includes: version info, IV, PBKDF# etc</returns>
     public string Protect(string pwd, string plaintext)
     {
+        if (_keyDerivation is null || _hMac is null || _symCrypto is null)
+            throw new ArgumentNullException($"null crypto arguments");
+
         BuildCryptoObjects(pwd);
 
         var sb = new StringBuilder();
@@ -143,7 +146,10 @@ public class AgileCrypto
     public string Unprotect(string pwd, string protectedBlob)
     {
         if (string.IsNullOrWhiteSpace(protectedBlob))
-            throw new ArgumentException($"'{nameof(protectedBlob)}' cannot be null or whitespace.", nameof(protectedBlob));
+            throw new ArgumentException($"'{nameof(protectedBlob)}' cannot be null or empty.", nameof(protectedBlob));
+
+        if (_keyDerivation is null || _hMac is null || _symCrypto is null)
+            throw new ArgumentNullException($"null crypto arguments");
 
         // Pull out the parts of the protected blob
         // 0: version
@@ -158,13 +164,9 @@ public class AgileCrypto
         int.TryParse(elements[version], out int ver);
         _ver = (Version)ver;
 
-        // Get IV
+        // Get IV/salt/ciphertext
         byte[] iv = Convert.FromBase64String(elements[initvect]);
-
-        // Get salt
         _salt = Convert.FromBase64String(elements[salt]);
-
-        // Get ciphertext
         byte[] ctext = Convert.FromBase64String(elements[ciphertext]);
 
         // We have all the data we need to build the crypto algs
@@ -195,16 +197,17 @@ public class AgileCrypto
     private static SymmetricAlgorithm CreateSymmetricAlgorithm(string name)
     {
         SymmetricAlgorithm? result = SymmetricAlgorithm.Create(name);
-        if (result == null)
-        {
+        if (result is null)
             throw new InvalidOperationException($"The {name} symmetric algorithm cannot be created.");
-        }
 
         return result;
     }
 
     private byte[] EncryptThePlaintext(string plaintext)
     {
+        if (_symCrypto is null || _keyDerivation is null)
+            throw new ArgumentNullException("Symmetric and Key derivations algorithms cannot be NULL.");
+
         _symCrypto.GenerateIV();
         _symCrypto.Key = _keyDerivation.GetBytes(_symCrypto.KeySize >> 3);
 
@@ -223,6 +226,9 @@ public class AgileCrypto
 
     private string DecryptThePlainText(byte[] ctext)
     {
+        if (_symCrypto == null)
+            throw new ArgumentNullException("Symmetric algorithm cannot be NULL.");
+
         string plaintext;
         ICryptoTransform decryptor = _symCrypto.CreateDecryptor();
         using var msDecrypt = new MemoryStream(ctext);
@@ -236,7 +242,7 @@ public class AgileCrypto
 
 static class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
         // some tests... yes, pwd and plaintext is in the code!
         const string pwd = "SSsshh!!";
